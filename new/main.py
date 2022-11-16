@@ -44,8 +44,8 @@ class OpenGLGlyphs:
         glMatrixMode(GL_MODELVIEW)
 
         # assign shapes
-        self.cone = OBJ('cone.obj')
-        self.sphere = OBJ('sphere.obj')
+        self.cone = OBJ('irlanda_aproximado.obj')
+        self.sphere = OBJ('irlanda_aproximado.obj')
 
         # assign texture
         glEnable(GL_TEXTURE_2D)

@@ -5,13 +5,22 @@ import cv2
 vid = cv2.VideoCapture(0)
 detector = cv2.QRCodeDetector()
 
-while True:
+while vid.isOpened():
     # Capture the video frame by frame
     ret, frame = vid.read()
 
     data, bbox, straight_qrcode = detector.detectAndDecode(frame)
-    if len(data) > 0:
-        print(data)
+
+    scale_percent = 150  # percent of original size
+    width = int(frame.shape[1] * scale_percent / 100)
+    height = int(frame.shape[0] * scale_percent / 100)
+    dim = (width, height)
+    # marco =
+    frame = cv2.resize(frame, dim, interpolation=cv2.INTER_AREA)
+
+    if data == 'image:1':
+        print('Accepted QR')
+
     # Display the resulting frame
     cv2.imshow('frame', frame)
     # the 'q' button is set as the

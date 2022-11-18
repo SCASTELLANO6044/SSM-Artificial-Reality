@@ -1,9 +1,6 @@
 import cv2
-import os
-import numpy as np
-# import math
-# import argparse
-# from obj_loader import *
+# import os
+# import numpy as np
 
 camera_id = 0
 delay = 1

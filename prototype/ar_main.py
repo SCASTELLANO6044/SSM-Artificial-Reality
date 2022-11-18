@@ -1,25 +1,11 @@
-
-# Useful links
-# http://www.pygame.org/wiki/OBJFileLoader
-# https://rdmilligan.wordpress.com/2015/10/15/augmented-reality-using-opencv-opengl-and-blender/
-# https://clara.io/library
-
-# TODO -> Implement command line arguments (scale, model and object to be projected)
-#      -> Refactor and organize code (proper funcition definition and separation, classes, error handling...)
-
 import argparse
-
 import cv2
 import numpy as np
 import math
 import os
 from objloader_simple import *
-
-# Minimum number of matches that have to be found
-# to consider the recognition valid
-MIN_MATCHES = 100
+MIN_MATCHES = 60
 DEFAULT_COLOR = (0, 0, 0)
-
 
 def main():
     """
@@ -45,62 +31,66 @@ def main():
     while True:
         # read the current frame
         ret, frame = cap.read()
-        if not ret:
-            print("Unable to capture video")
-            return
-        # find and draw the keypoints of the frame
-        kp_frame, des_frame = sift.detectAndCompute(frame, None)
-        # match frame descriptors with model descriptors
-        matches = bf.match(des_model, des_frame)
-        matches1 = bf.knnMatch(des_model, des_frame, k=2)
-        good = []
-        for m, n in matches1:
-            if m.distance < 0.75 * n.distance:
-                good.append([m])
-        # sort them in the order of their distance
-        # the lower the distance, the better the match
-        matches = sorted(matches, key=lambda x: x.distance)
+        if ret:
+            # find and draw the keypoints of the frame
+            kp_frame, des_frame = sift.detectAndCompute(frame, None)
+            # match frame descriptors with model descriptors
+            matches = bf.match(des_model, des_frame)
+            matches1 = bf.knnMatch(des_model, des_frame, k=2)
+            good = []
+            for m, n in matches1:
+                if m.distance < 0.75 * n.distance:
+                    good.append([m])
+            # sort them in the order of their distance
+            # the lower the distance, the better the match
+            matches = sorted(matches, key=lambda x: x.distance)
 
-        # compute Homography if enough matches are found
-        if len(good) > MIN_MATCHES:
-            # differenciate between source points and destination points
-            src_pts = np.float32([kp_model[m.queryIdx].pt for m in matches]).reshape(-1, 1, 2)
-            dst_pts = np.float32([kp_frame[m.trainIdx].pt for m in matches]).reshape(-1, 1, 2)
-            # compute Homography
-            homography, mask = cv2.findHomography(src_pts, dst_pts, cv2.RANSAC, 5.0)
-            if args.rectangle:
-                # Draw a rectangle that marks the found model in the frame
-                h, w = model.shape
-                pts = np.float32([[0, 0], [0, h - 1], [w - 1, h - 1], [w - 1, 0]]).reshape(-1, 1, 2)
-                # project corners into frame
-                dst = cv2.perspectiveTransform(pts, homography)
-                # connect them with lines
-                frame = cv2.polylines(frame, [np.int32(dst)], True, 255, 3, cv2.LINE_AA)
-            # if a valid homography matrix was found render cube on model plane
-            if homography is not None:
-                try:
-                    # obtain 3D projection matrix from homography matrix and camera parameters
-                    projection = projection_matrix(camera_parameters, homography)
-                    # project cube or model
-                    frame = render(frame, obj, projection, model, False)
-                    #frame = render(frame, model, projection)
-                except:
-                    pass
-            # draw first 10 matches.
-            if args.matches:
-                frame = cv2.drawMatches(model, kp_model, frame, kp_frame, matches[:10], 0, flags=2)
-            # show result
+            # compute Homography if enough matches are found
+            if len(good) > MIN_MATCHES:
+                # differenciate between source points and destination points
+                src_pts = np.float32([kp_model[m.queryIdx].pt for m in matches]).reshape(-1, 1, 2)
+                dst_pts = np.float32([kp_frame[m.trainIdx].pt for m in matches]).reshape(-1, 1, 2)
+                # compute Homography
+                homography, mask = cv2.findHomography(src_pts, dst_pts, cv2.RANSAC, 5.0)
+                if args.rectangle:
+                    # Draw a rectangle that marks the found model in the frame
+                    h, w = model.shape
+                    pts = np.float32([[0, 0], [0, h - 1], [w - 1, h - 1], [w - 1, 0]]).reshape(-1, 1, 2)
+                    # project corners into frame
+                    dst = cv2.perspectiveTransform(pts, homography)
+                    # connect them with lines
+                    frame = cv2.polylines(frame, [np.int32(dst)], True, 255, 3, cv2.LINE_AA)
+                # if a valid homography matrix was found render cube on model plane
+                if homography is not None:
+                    try:
+                        # obtain 3D projection matrix from homography matrix and camera parameters
+                        projection = projection_matrix(camera_parameters, homography)
+                        # project cube or model
+                        frame = render(frame, obj, projection, model, False)
+                        #frame = render(frame, model, projection)
+                    except:
+                        pass
+                # draw first 10 matches.
+                if args.matches:
+                    frame = cv2.drawMatches(model, kp_model, frame, kp_frame, matches[:10], 0, flags=2)
+                # show result
+                cv2.imshow('frame', frame)
+                if cv2.waitKey(1) & 0xFF == ord('q'):
+                    break
+
+            else:
+                print("Not enough matches found - %d/%d" % (len(good), MIN_MATCHES))
+                # cv2.imshow('frame', frame)
             cv2.imshow('frame', frame)
-            if cv2.waitKey(1) & 0xFF == ord('q'):
-                break
-
         else:
-            print("Not enough matches found - %d/%d" % (len(good), MIN_MATCHES))
-            # cv2.imshow('frame', frame)
-        cv2.imshow('frame', frame)
+            print('No se puede acceder al vídeo')
+            break
+
+        if cv2.waitKey(1) & 0xFF == ord('q'):
+            break
 
     cap.release()
-    cv2.destroyAllWindows()
+    cv2.destroyWindow('frame')
     return 0
 
 def render(img, obj, projection, model, color=False):

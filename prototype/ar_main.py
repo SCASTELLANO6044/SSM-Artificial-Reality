@@ -3,7 +3,7 @@ import cv2
 import numpy as np
 import math
 import os
-from objloader_simple import *
+from objLoader import *
 MIN_MATCHES = 60
 DEFAULT_COLOR = (0, 0, 0)
 

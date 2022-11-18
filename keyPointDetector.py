@@ -17,6 +17,6 @@ kp_model, des_model = orb.detectAndCompute(img, None)
 # draw only keypoints location,not size and orientation
 img2 = cv2.drawKeypoints(img, kp_model, img, color=(0,255,0), flags=0)
 plt.imshow(img2), plt.show()
-cv2.imshow('keypoints',img2)
+# cv2.imshow('keypoints',img2)
 cv2.waitKey(0)
-cv2.destroyAllWindows()
+# cv2.destroyAllWindows()

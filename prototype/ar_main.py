@@ -1,3 +1,4 @@
+
 # Useful links
 # http://www.pygame.org/wiki/OBJFileLoader
 # https://rdmilligan.wordpress.com/2015/10/15/augmented-reality-using-opencv-opengl-and-blender/
@@ -12,11 +13,11 @@ import cv2
 import numpy as np
 import math
 import os
-from obj_loader import *
+from objloader_simple import *
 
 # Minimum number of matches that have to be found
 # to consider the recognition valid
-MIN_MATCHES = 18
+MIN_MATCHES = 100
 DEFAULT_COLOR = (0, 0, 0)
 
 
@@ -24,21 +25,20 @@ def main():
     """
     This functions loads the target surface image,
     """
-    qcd = cv2.QRCodeDetector()
     homography = None
     # matrix of camera parameters (made up but works quite well for me)
     camera_parameters = np.array([[800, 0, 320], [0, 800, 240], [0, 0, 1]])
     # create ORB keypoint detector
-    orb = cv2.ORB_create()
+    sift = cv2.SIFT_create()
     # create BFMatcher object based on hamming distance
-    bf = cv2.BFMatcher(cv2.NORM_HAMMING, crossCheck=True)
+    bf = cv2.BFMatcher()
     # load the reference surface that will be searched in the video stream
     dir_name = os.getcwd()
-    model = cv2.imread(os.path.join(dir_name, 'reference/qr.jpg'), 0)
+    model = cv2.imread('../reference/qr.jpg',cv2.IMREAD_GRAYSCALE)
     # Compute model keypoints and its descriptors
-    kp_model, des_model = orb.detectAndCompute(model, None)
+    kp_model, des_model = sift.detectAndCompute(model, None)
     # Load 3D model from OBJ file
-    obj = OBJ(os.path.join(dir_name, 'models\\fox.obj'), swapyz=True)
+    obj = OBJ(os.path.join(dir_name, '../models/fox.obj'), swapyz=True)
     # init video capture
     cap = cv2.VideoCapture(0)
 
@@ -49,15 +49,20 @@ def main():
             print("Unable to capture video")
             return
         # find and draw the keypoints of the frame
-        kp_frame, des_frame = orb.detectAndCompute(frame, None)
+        kp_frame, des_frame = sift.detectAndCompute(frame, None)
         # match frame descriptors with model descriptors
         matches = bf.match(des_model, des_frame)
+        matches1 = bf.knnMatch(des_model, des_frame, k=2)
+        good = []
+        for m, n in matches1:
+            if m.distance < 0.75 * n.distance:
+                good.append([m])
         # sort them in the order of their distance
         # the lower the distance, the better the match
         matches = sorted(matches, key=lambda x: x.distance)
 
         # compute Homography if enough matches are found
-        if len(matches) > MIN_MATCHES:
+        if len(good) > MIN_MATCHES:
             # differenciate between source points and destination points
             src_pts = np.float32([kp_model[m.queryIdx].pt for m in matches]).reshape(-1, 1, 2)
             dst_pts = np.float32([kp_frame[m.trainIdx].pt for m in matches]).reshape(-1, 1, 2)
@@ -90,7 +95,9 @@ def main():
                 break
 
         else:
-            print("Not enough matches found - %d/%d" % (len(matches), MIN_MATCHES))
+            print("Not enough matches found - %d/%d" % (len(good), MIN_MATCHES))
+            # cv2.imshow('frame', frame)
+        cv2.imshow('frame', frame)
 
     cap.release()
     cv2.destroyAllWindows()
@@ -111,7 +118,6 @@ def render(img, obj, projection, model, color=False):
         # render model in the middle of the reference surface. To do so,
         # model points must be displaced
         points = np.array([[p[0] + w / 2, p[1] + h / 2, p[2]] for p in points])
-        # points = np.array([[5, 5, 5] for p in points])
         dst = cv2.perspectiveTransform(points.reshape(-1, 1, 3), projection)
         imgpts = np.int32(dst)
         if color is False:

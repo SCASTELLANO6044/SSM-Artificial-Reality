@@ -3,7 +3,7 @@ import os
 import numpy as np
 # import math
 # import argparse
-from obj_loader import *
+# from obj_loader import *
 
 camera_id = 0
 delay = 1

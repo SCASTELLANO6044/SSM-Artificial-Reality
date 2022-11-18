@@ -4,7 +4,7 @@ import numpy as np
 import math
 import os
 from objLoader import *
-MIN_MATCHES = 60
+MIN_MATCHES = 90
 DEFAULT_COLOR = (0, 0, 0)
 
 def main():

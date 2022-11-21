@@ -4,7 +4,7 @@ import numpy as np
 import math
 import os
 from objLoader import *
-MIN_MATCHES = 15
+MIN_MATCHES = 80
 DEFAULT_COLOR = (0, 0, 0)
 
 def main():
@@ -20,11 +20,11 @@ def main():
     bf = cv2.BFMatcher()
     # load the reference surface that will be searched in the video stream
     dir_name = os.getcwd()
-    model = cv2.imread('../reference/taza.jpg',cv2.IMREAD_GRAYSCALE)
+    model = cv2.imread('../reference/qr.jpg',cv2.IMREAD_GRAYSCALE)
     # Compute model keypoints and its descriptors
     kp_model, des_model = sift.detectAndCompute(model, None)
     # Load 3D model from OBJ file
-    obj = OBJ(os.path.join(dir_name, '../models/fox.obj'), swapyz=True)
+    obj = OBJ(os.path.join(dir_name, '../models/pirate-ship-fat.obj'), swapyz=True)
     # init video capture
     cap = cv2.VideoCapture(0)
 

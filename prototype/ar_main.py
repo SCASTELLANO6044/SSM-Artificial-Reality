@@ -24,7 +24,7 @@ def main():
     # Compute model keypoints and its descriptors
     kp_model, des_model = sift.detectAndCompute(model, None)
     # Load 3D model from OBJ file
-    obj = OBJ(os.path.join(dir_name, '../models/pirate-ship-fat.obj'), swapyz=True)
+    obj = OBJ(os.path.join(dir_name, '../models/rat.obj'), swapyz=True)
     # init video capture
     cap = cv2.VideoCapture(0)
 
